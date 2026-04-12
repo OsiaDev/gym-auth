@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: gym-auth-service
+
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:gym_db}
+    username: ${DB_USER:gym_user}
+    password: ${DB_PASS:gym_pass}
+    pool:
+      initial-size: 10
+      max-size: 20
+
+  kafka:
+    consumer:
+      bootstrap-servers: ${KAFKA_BROKERS:localhost:29092}
+      group-id: umas-operation-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      properties:
+        spring.json.trusted.packages: "co.cetad.umas.operation.domain.model.vo"
+    producer:
+      bootstrap-servers: ${KAFKA_BROKERS:localhost:29092}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
