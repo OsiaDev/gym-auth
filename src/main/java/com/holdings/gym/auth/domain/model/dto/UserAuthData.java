@@ -13,7 +13,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UserAuthData {
     private UUID uuidUsuario;
-    private UUID uuidEmpresa;
     private String email;
     private String passwordHasheada;
     private Boolean cuentaVerificada;

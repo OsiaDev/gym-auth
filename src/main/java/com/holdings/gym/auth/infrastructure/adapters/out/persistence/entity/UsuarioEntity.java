@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -16,17 +18,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table("usuario")
-public class UsuarioEntity {
+public class UsuarioEntity implements Persistable<UUID> {
 
     @Id
     @Column("uuidusuario") // In R2DBC mapping maps case-insensitive but sometimes exact column depends on db naming
     private UUID uuidUsuario;
-
-    @Column("uuidempresa")
-    private UUID uuidEmpresa;
-
-    @Column("uuidsede")
-    private UUID uuidSede;
 
     @Column("nombresusuario")
     private String nombresUsuario;
@@ -51,5 +47,18 @@ public class UsuarioEntity {
 
     @Column("created_at")
     private LocalDateTime createdAt;
+
+    @Transient
+    private boolean isNew = false;
+
+    @Override
+    public UUID getId() {
+        return uuidUsuario;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
 
 }

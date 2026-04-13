@@ -12,34 +12,45 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class KafkaEventPublisherAdapter implements EventPublisherPort {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+
     private static final String TOPIC = "gym-email-events";
 
     @Override
     public CompletableFuture<Void> publishUserRegisteredEvent(String email, String username, String type) {
+        log.debug("[KAFKA] Preparando evento type={} para email={}, username={}", type, email, username);
+
         Map<String, String> payload = new HashMap<>();
         payload.put("email", email);
         payload.put("username", username);
         payload.put("type", type);
-        
+
+        String jsonMessage;
         try {
-            String jsonMessage = objectMapper.writeValueAsString(payload);
-            return kafkaTemplate.send(TOPIC, jsonMessage)
-                    .thenAccept(result -> log.info("Message sent to topic {} successfully", TOPIC))
-                    .exceptionally(ex -> {
-                        log.error("Failed to send message to kafka topic {}", TOPIC, ex);
-                        return null;
-                    });
-        } catch (JsonProcessingException e) {
-            log.error("Could not serialize kafka payload", e);
+            jsonMessage = objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException ex) {
+            log.error("[KAFKA] Error serializando payload del evento type={} para email={}", type, email, ex);
             return CompletableFuture.completedFuture(null);
         }
+
+        log.debug("[KAFKA] Publicando en topic={} — payload={}", TOPIC, jsonMessage);
+
+        return kafkaTemplate.send(TOPIC, jsonMessage)
+                .thenAccept(result -> log.info(
+                        "[KAFKA] Evento publicado exitosamente — topic={}, type={}, email={}, offset={}",
+                        TOPIC, type, email,
+                        result.getRecordMetadata().offset()
+                ))
+                .exceptionally(ex -> {
+                    log.error("[KAFKA] Error publicando en topic={}, type={}, email={}", TOPIC, type, email, ex);
+                    return null;
+                });
     }
 
 }
