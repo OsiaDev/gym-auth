@@ -62,8 +62,9 @@ public class AuthUseCaseImpl implements AuthUseCase {
                                 .header().add("kid", rsaKeyProvider.getKeyId()).and()
                                 .subject(user.getUuidUsuario().toString())
                                 .issuer(issuerUri)
-                                .claim("empresa_id", "") // TODO: Se deberá proveer por el contexto/sede activo del usuario
+                                .claim("empresa_id", user.getEmpresaId() != null ? user.getEmpresaId() : "") // Ahora viene de la DB
                                 .claim("roles", user.getRoles())
+                                .claim("nick", user.getNickUsuario() != null ? user.getNickUsuario() : "")
                                 .issuedAt(Date.from(now))
                                 .expiration(Date.from(expiration))
                                 .signWith(rsaKeyProvider.getPrivateKey(), Jwts.SIG.RS256)

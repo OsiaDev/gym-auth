@@ -31,3 +31,6 @@ spring:
       retries: 3
       properties:
         enable.idempotence: true
+
+app:
+  issuer-uri: ${APP_ISSUER_URI:http://localhost:8081}

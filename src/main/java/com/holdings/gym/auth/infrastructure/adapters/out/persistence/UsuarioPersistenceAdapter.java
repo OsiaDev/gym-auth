@@ -18,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 public class UsuarioPersistenceAdapter implements UserPersistencePort {
 
     private final UsuarioRepository usuarioRepository;
+    private final org.springframework.r2dbc.core.DatabaseClient databaseClient;
 
     @Override
     public CompletableFuture<Boolean> existsByEmail(String email) {
@@ -68,13 +69,32 @@ public class UsuarioPersistenceAdapter implements UserPersistencePort {
         return usuarioRepository.findByEmailUsuario(email)
                 .doOnNext(entity -> log.debug("[PERSISTENCE] Usuario encontrado — email={}, uuid={}", email, entity.getUuidUsuario()))
                 .doOnError(ex -> log.error("[PERSISTENCE] Error buscando usuario por email={}", email, ex))
-                .map(entity -> UserAuthData.builder()
-                        .uuidUsuario(entity.getUuidUsuario())
-                        .email(entity.getEmailUsuario())
-                        .passwordHasheada(entity.getPasswordUsuario())
-                        .cuentaVerificada(entity.getCuentaVerificada())
-                        .roles("ADMIN")
-                        .build())
+                .flatMap(entity -> databaseClient.sql("SELECT uuidempresa, STRING_AGG(rolUsuario::text, ',') AS roles_agg FROM rol_usuario WHERE uuidusuario = :uuid GROUP BY uuidempresa LIMIT 1")
+                        .bind("uuid", entity.getUuidUsuario())
+                        .map(row -> {
+                            UUID empresaId = row.get("uuidempresa", UUID.class);
+                            String roles = row.get("roles_agg", String.class);
+                            return UserAuthData.builder()
+                                    .uuidUsuario(entity.getUuidUsuario())
+                                    .nickUsuario(entity.getNickUsuario())
+                                    .email(entity.getEmailUsuario())
+                                    .passwordHasheada(entity.getPasswordUsuario())
+                                    .cuentaVerificada(entity.getCuentaVerificada())
+                                    .roles(roles != null ? roles : "")
+                                    .empresaId(empresaId != null ? empresaId.toString() : "")
+                                    .build();
+                        })
+                        .first()
+                        .defaultIfEmpty(UserAuthData.builder()
+                                .uuidUsuario(entity.getUuidUsuario())
+                                .nickUsuario(entity.getNickUsuario())
+                                .email(entity.getEmailUsuario())
+                                .passwordHasheada(entity.getPasswordUsuario())
+                                .cuentaVerificada(entity.getCuentaVerificada())
+                                .roles("")
+                                .empresaId("")
+                                .build())
+                )
                 .toFuture();
     }
 

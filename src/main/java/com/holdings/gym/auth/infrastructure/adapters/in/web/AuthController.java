@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.concurrent.CompletableFuture;
 
+
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -99,4 +101,20 @@ public class AuthController {
                 });
     }
 
+    @GetMapping("/me")
+    public CompletableFuture<ResponseEntity<?>> getMe(@RequestParam String email) {
+        log.debug("[AUTH][ME] Verificando sesión para email={}", email);
+        // Usaremos directamente el useCase o el port si lo inyectamos.
+        // Espera, AuthController no tiene userPersistencePort, pero podemos usar authUseCase o injectar userPersistencePort.
+        // Dado que solo tenemos authUseCase y registerUserUseCase, podríamos llamar a un método en authUseCase.
+        // Lo mejor será llamar a registerUserUseCase.checkEmailExists() que devuelve Boolean.
+        return registerUserUseCase.checkEmailExists(email)
+                .thenApply(exists -> {
+                    if (!exists) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                    }
+                    return ResponseEntity.ok().build();
+                });
+    }
+    
 }
