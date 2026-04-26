@@ -15,8 +15,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -56,6 +59,12 @@ public class AuthUseCaseImpl implements AuthUseCase {
                     Instant now = Instant.now();
                     Instant expiration = now.plus(8, ChronoUnit.HOURS);
 
+                    String rolesStr = user.getRoles();
+                    List<String> rolesList = Arrays.stream(rolesStr.split(","))
+                            .map(String::trim)
+                            .filter(r -> !r.isEmpty())
+                            .collect(Collectors.toList());
+
                     String token;
                     try {
                         token = Jwts.builder()
@@ -63,7 +72,7 @@ public class AuthUseCaseImpl implements AuthUseCase {
                                 .subject(user.getUuidUsuario().toString())
                                 .issuer(issuerUri)
                                 .claim("empresa_id", user.getEmpresaId() != null ? user.getEmpresaId() : "") // Ahora viene de la DB
-                                .claim("roles", user.getRoles())
+                                .claim("roles", rolesList)
                                 .claim("nick", user.getNickUsuario() != null ? user.getNickUsuario() : "")
                                 .issuedAt(Date.from(now))
                                 .expiration(Date.from(expiration))
