@@ -1,5 +1,7 @@
 package com.holdings.gym.auth.domain.ports.out;
 
+import com.holdings.gym.auth.domain.model.dto.UserAuthData;
+
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -11,5 +13,6 @@ public interface UserPersistencePort {
 
     CompletableFuture<UUID> saveUser(String nombres, String apellidos, String nickUsuario, String email, String passwordHasheada);
 
-    CompletableFuture<com.holdings.gym.auth.domain.model.dto.UserAuthData> findByEmail(String email);
+    CompletableFuture<UserAuthData> findByEmail(String email);
+    
 }
